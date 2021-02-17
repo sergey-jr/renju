@@ -1,5 +1,5 @@
 name:                my-project
-version:             0.1.0.0
+version:             1.0
 github:              "iu-haskell-spring-2021/project-template"
 license:             BSD3
 author:              "Nikolai Kudasov"
@@ -30,6 +30,12 @@ ghc-options:
 
 dependencies:
 - base >= 4.7 && < 5
+- gloss
+- matrix
+- vector
+# - JuicyPixels
+# - JuicyPixels-repa
+# - repa
 
 library:
   source-dirs: src
