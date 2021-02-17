@@ -5,28 +5,34 @@ import System.IO.Unsafe
 import Control.Exception
 import Data.Matrix
 import Data.List
-import System.IO
+import Data.Bifunctor
+
+-- handle exceptions
+processError :: FilePath -> IOException ->  IO()
+processError f e = do 
+    let err = show (e :: IOException)
+    print ("Warning: Couldn't open " ++ f ++ ": " ++ err)
 
 -- load game from file
-loadGame :: Game -> Game
-loadGame game = game {field = field', player= player', timer=(time1, time2), posMouse=(0,0)}
-         where
-         tuple = unsafePerformIO (loadFile `catch` default')
-         field' = fst tuple
-         player' = fst(snd tuple)
-         time1 = read(fst(snd(snd tuple)))
-         time2 = read(snd(snd(snd tuple)))
+loadGame :: Game -> IO Game
+loadGame game = do
+         field' <- loadBoard
+         (player', timer') <- loadTimer
+         return game {field = field', player= player', timer=timer', posMouse=(0,0)}
          
--- handle exception on reading
-default' :: IOException -> IO (Board ,(Player,(String,String)))
-default' _ = return (matrixFiling sizeField,(Black,("0","0")))
 
--- load from file state
-loadFile :: IO (Board ,(Player,(String,String)))
-loadFile = do
-           file1 <- readFile "save/save_board.txt"
-           file2 <- readFile "save/save_time.txt"
-           return (recMatrix  1 1 file1 $ matrixFiling sizeField, recPlayer  file2)
+loadTimer :: IO (Player,PointI)
+loadTimer = do
+    content <- readFile "save/save_time.txt"
+    let (player', timers) = recPlayer content
+    _ <- print player' >> print timers >> print content
+    let (x, y) = bimap read read timers
+    return (player', (x, y))
+
+loadBoard :: IO Board
+loadBoard = do
+    content <- readFile "save/save_board.txt"
+    return (recMatrix  1 1 content $ matrixFiling sizeField)
 
 show' :: Cell -> [Char]
 show' Nothing = "0"
@@ -39,32 +45,37 @@ showRow row = intercalate " " (map show' row)
 showRows :: [[Cell ]] -> [[Char ]]
 showRows = map showRow
 
--- handle exceptions on write
-processErrorOnWrite :: IOException -> IO()
-processErrorOnWrite e = do 
-    let err = show (e :: IOException)
-    hPutStr
-        stderr
-        ("Warning: Couldn't open " ++ "save/save_board.txt" ++ ": " ++ err)
-
 -- save board
-writeToFileBoard :: Board -> IO ()
-writeToFileBoard board = do
-    let write = writeFile "save/save_board.txt" (intercalate "\n" (showRows (toLists board)))
-    let a = unsafePerformIO (write `catch` processErrorOnWrite)
-    return a
+saveBoard :: Board -> IO Board
+saveBoard board = do
+    -- print "started save board"
+    writeFile "./save/save_board.txt" (intercalate "\n" (showRows (toLists board)))
+    -- print "end save board"
+    return board
 
 -- save timer
-writeToFileTimer :: PointI -> Player -> IO ()
-writeToFileTimer (x, y) player'| player' == White = writeFile "save/save_time.txt" ("W " ++ show y)
-                               | otherwise = writeFile "save/save_time.txt" ("B " ++ show x)
+saveTimer :: PointI -> Player -> IO PointI
+saveTimer (x, y) player'
+    | player' == White = 
+        do 
+            -- print "started save timer"
+            writeFile "./save/save_time.txt" ("W " ++ show x ++ " " ++ show y ++ "\n")
+            -- print "end save timer"
+            return (x, y)
+    | otherwise = 
+        do 
+            -- print "started save timer"
+            writeFile "./save/save_time.txt" ("B " ++ show x ++ " " ++ show y ++ "\n")
+            -- print "end save timer"
+            return (x, y)
 
 -- save game
-saveBoard :: Game -> Game
-saveBoard game = game
-    where
-        a = writeToFileBoard (field game)
-        b = writeToFileTimer (timer game) (player game)
+saveGame:: Game -> IO Game
+saveGame game = 
+    do
+        _ <- saveBoard (field game)
+        _ <- saveTimer (timer game) (player game)
+        return game
 
 -- load matrix from strings
 recMatrix  :: Int -> Int -> String -> Board -> Board
@@ -79,8 +90,8 @@ recMatrix  i j (x:xs) m             | x == '\n' = recMatrix  (i + 1) 1 xs m
 
 -- load timers and which turn
 recPlayer  :: String -> (Player,(String,String))
-recPlayer  (x:xs)   | x == 'B' = (Black, recTime  (tail xs) [] ("",""))
-                   | x == 'W' = (White , recTime  (tail xs) [] ("",""))
+recPlayer  (x:xs)   | x == 'B' = (Black, recTime  xs [] ("",""))
+                   | x == 'W' = (White , recTime  xs [] ("",""))
                    
 recTime  :: String -> String -> (String,String) -> (String,String)
 recTime  [] _ s = s

@@ -6,12 +6,13 @@ import Logic
 import Utils
 import Graphics.Gloss
 import Graphics.Gloss.Interface.Pure.Game
+import Graphics.Gloss.Interface.IO.Game
 import Data.Matrix
 
              
 -- running game
 go :: Game -> IO ()
-go world = play (InWindow "Game Rejnzu" (800,800) (0,0)) 
+go world = playIO (InWindow "Game Rejnzu" (800,800) (0,0)) 
                white 
                1
                world 
@@ -20,14 +21,14 @@ go world = play (InWindow "Game Rejnzu" (800,800) (0,0))
                update
 
 -- update timer (if exist)
-update ::Float -> Game -> Game
-update _ game | p = game
-              | (x == 0) || (y == 0) = game
-              | limit == Nolimit = game -- game without limit does not need changes
-              | x == 1 && limit == Limit = game { win = Victory White} -- time is up for Black
-              | y == 1 && limit == Limit = game { win = Victory Black } -- time is up for White
-              | limit == Limit = game {timer = f (player game)}
-              | otherwise = game
+update ::Float -> Game -> IO Game
+update _ game | p = return game
+              | (x == 0) || (y == 0) = return game
+              | limit == Nolimit = return game -- game without limit does not need changes
+              | x == 1 && limit == Limit = return game { win = Victory White} -- time is up for Black
+              | y == 1 && limit == Limit = return game { win = Victory Black } -- time is up for White
+              | limit == Limit = return game {timer = f (player game)}
+              | otherwise = return game
                 where
                   (x, y) = timer game
                   (limit,_,_,p) = mode game
@@ -35,13 +36,13 @@ update _ game | p = game
                   f Black   = (x-1, y)
 
 -- draw game state
-convert :: Game -> Picture
-convert (Game m _ w p _ t menu' (ti,ha,mo,pa) pos) =
-                           Pictures $
-                           drawPic w p ++ 
-                           time ti t p    ++ 
+convert :: Game -> IO Picture
+convert (Game m _ game p _ t' menu' (ti,ha,mo,pa) pos) = return
+                           (Pictures $
+                           drawPic game p ++ 
+                           time ti t' p    ++ 
                            mainDrawField m ++
-                           drawMenu p menu' (ti,ha,mo,pa) 
+                           drawMenu p menu' (ti,ha,mo,pa) )
                           --  ++ [axisGrid 800 800 pos]
 
 
@@ -190,15 +191,15 @@ drawLastCell pos_x pos_y (Just x)         =       [Translate
                                           col White = white
 
 -- handle events
-handle :: Event -> Game -> Game
+handle :: Event -> Game -> IO Game
 handle (EventKey (Char 'm') Down _ _) game 
-  | menu game == Empty= game {menu = Main 0, mode = newMode True}
-  | otherwise = game {menu = Empty, mode = newMode False}
+  | menu game == Empty= return game {menu = Main 0, mode = newMode True}
+  | otherwise = return game {menu = Empty, mode = newMode False}
   where
     (t',h,m,_) = mode game
     newMode f = (t', h, m, f)
 handle (EventMotion (x,y)) game 
-  | menu game == Empty || menu game == Opt = game {posMouse = (x, y)}
+  | menu game == Empty || menu game == Opt = return game {posMouse = (x, y)}
   | otherwise = handleMenu Move (x,y) (game {posMouse = (x, y)}) 
 handle (EventKey (MouseButton LeftButton) Down _ (x,y)) game 
   | menu game /= Empty && menu game /= Opt = handleMenu Click (x,y) (game {mode = newMode True, posMouse = (x, y)})
@@ -207,55 +208,55 @@ handle (EventKey (MouseButton LeftButton) Down _ (x,y)) game
       (t',h,m,_) = mode game
       newMode f = (t', h, m, f)
 
-handle _ game | p = game
+handle _ game | p = return game
   where
     (_, _, _, p) = mode game
-handle (EventKey (SpecialKey KeySpace) Down _ _) w =  getback w
-handle _ game| win game /= Tie && win game /= None  = game
-handle (EventKey (MouseButton LeftButton) Down _ (x,y)) game = checkGame (mainNumberRow (x,y),mainNumberCol (x,y)) game
-handle _ w = w
+handle (EventKey (SpecialKey KeySpace) Down _ _) game =  return (getback game)
+handle _ game| win game /= Tie && win game /= None  = return game
+handle (EventKey (MouseButton LeftButton) Down _ (x,y)) game = return (checkGame (mainNumberRow (x,y),mainNumberCol (x,y)) game)
+handle _ game = return game
 
 -- handle menu events
 t :: Types.Point -> Float -> Float -> Float -> Float -> Bool
 t (x,y) dx1 dx2 dy1 dy2 = (x >= (offsetX + dx1) && x <= (offsetX + dx2)) && (y >= dy1 && y <= dy2)
 
-handleMenu :: MouseEvent -> Types.Point -> Game -> Game
+handleMenu :: MouseEvent -> Types.Point -> Game -> IO Game
 handleMenu event (x,y) (Game a b c d e f (Main g) (x1,y1,z1,p) _) 
   | t (x,y) (-120) 120 110 150
     = case event of
-      Move -> menu' 1
+      Move -> return (menu' 1)
       Click-> loadGame (menu' g)
   | t (x,y) (-120) 120 50 90
     = case event of
-      Move -> menu' 2
-      Click-> saveBoard (menu' g)
+      Move -> return (menu' 2)
+      Click-> saveGame (menu' g)
   | t (x,y) (-120) 120 (-10) 30
     = case event of
-      Move -> menu' 3
-      Click-> Game a b c d e f Opt (x1,y1,z1,p) (x,y)
+      Move -> return (menu' 3)
+      Click-> return (Game a b c d e f Opt (x1,y1,z1,p) (x,y))
   |t (x,y)  155 190 190 225
     = case event of
-      Click->  Game a b c d e f Empty (x1,y1,z1,False) (x,y)
-      Move ->  menu' g 
-  | otherwise = menu' g 
+      Click->  return (Game a b c d e f Empty (x1,y1,z1,False) (x,y))
+      Move ->  return (menu' g )
+  | otherwise = return (menu' g )
   where 
   menu' n = Game a b c d e f (Main n) (x1,y1,z1,p) (x,y)
                                                      
                                                      
 handleMenu Click (x,y) (Game a b c d e f Opt (x1,y1,z1,p) _)| t (x,y) 155 190 190 225
-                                                         = Game a b c d e f Empty (x1,y1,z1,False) (x,y)
+                                                         = return (Game a b c d e f Empty (x1,y1,z1,False) (x,y))
                                                             | t (x,y) (-180) (-60) 145 160
                                                          = case x1 of
-                                                                Limit    -> Game a b c d e f Opt (Nolimit,y1,z1,p) (x,y)
-                                                                Nolimit -> Game a b c d e (20,20) Opt (Limit,y1,z1,p) (x,y)
+                                                                Limit    -> return (Game a b c d e f Opt (Nolimit,y1,z1,p) (x,y))
+                                                                Nolimit -> return (Game a b c d e (20,20) Opt (Limit,y1,z1,p) (x,y))
                                                             | t (x,y) (-180) (-20) 65 85
                                                          = case y1 of
-                                                                Hard -> Game a b c d e f Opt (x1,Easy,z1,p) (x,y)
-                                                                Easy -> Game a b c d e f Opt (x1, Hard,z1,p) (x,y)                                                             
+                                                                Hard -> return (Game a b c d e f Opt (x1,Easy,z1,p) (x,y))
+                                                                Easy -> return (Game a b c d e f Opt (x1, Hard,z1,p) (x,y))                                                             
                                                             | t (x,y) (-180) (-80) (-15) 0
                                                          = case z1 of 
-                                                                HumComp -> Game a b c d e f Opt (x1,y1,HumHum,p) (x,y)
-                                                                HumHum  -> Game a b c d e f Opt (x1,y1,HumComp,p) (x,y)
+                                                                HumComp -> return (Game a b c d e f Opt (x1,y1,HumHum,p) (x,y))
+                                                                HumHum  -> return (Game a b c d e f Opt (x1,y1,HumComp,p) (x,y))
                                                             | t (x,y) (-180) (-130) (-85) (-35)
-                                                         = Game a b c d e f (Main 0) (x1,y1,z1,p) (x,y)
-                                                            | otherwise = Game a b c d e f Opt (x1,y1,z1,p) (x,y)                                                             
+                                                              = return (Game a b c d e f (Main 0) (x1,y1,z1,p) (x,y))
+                                                            | otherwise = return (Game a b c d e f Opt (x1,y1,z1,p) (x,y))                                                             

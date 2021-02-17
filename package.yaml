@@ -33,9 +33,7 @@ dependencies:
 - gloss
 - matrix
 - vector
-# - JuicyPixels
-# - JuicyPixels-repa
-# - repa
+- directory
 
 library:
   source-dirs: src
