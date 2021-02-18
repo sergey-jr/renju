@@ -1,5 +1,6 @@
 # Renju
-[![Build Status](https://travis-ci.org/sergey-jr/renju.svg?branch=master)](https://travis-ci.org/sergey-jr/renju)
+[![Build Status](https://travis-ci.com/sergey-jr/renju.svg?branch=master)](https://travis-ci.com/sergey-jr/renju)
+
 This project is a game of Haskell-Implementation of [Renju](https://en.wikipedia.org/wiki/Renju)
 
 Functions that have realized:

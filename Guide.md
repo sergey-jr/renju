@@ -1,6 +1,6 @@
 # project-template
 
-[![Build Status](https://travis-ci.org/sergey-jr/renju.svg?branch=master)](https://travis-ci.org/sergey-jr/renju)
+[![Build Status](https://travis-ci.com/sergey-jr/renju.svg?branch=master)](https://travis-ci.com/sergey-jr/renju)
 
 Template for a Haskell project.
 
