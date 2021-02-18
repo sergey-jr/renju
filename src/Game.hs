@@ -4,6 +4,7 @@ import Graphics
 import Types
 import Files
 import Graphics.Gloss
+import Logic
 
 
 gameMain :: IO ()
@@ -37,8 +38,7 @@ gameMain
    h_h        <- loadBMP "images/bmp/h.bmp"        --25
    h_c        <- loadBMP "images/bmp/h_c.bmp"      --26
    
-             
-   go (Game (matrixFiling sizeField) 
+   let game = Game (matrixFiling sizeField) 
         Black None 
         [rejnzu,
         whiteWin,
@@ -66,4 +66,5 @@ gameMain
         easy,h_h,h_c] 
         Nothing (60,60) 
         Empty 
-        (Nolimit,Easy,HumHum,False) (0,0))
+        (Nolimit,Easy,HumHum,False) (0,0)          
+   go (checkGame (8,8) game){back = Nothing}
