@@ -75,7 +75,7 @@ drawMenu _ _ _ = [Blank]
 -- draw main menu
 drawMain :: [Picture] -> [Picture]
 drawMain p =  zipWith
-            (\ dy i -> pic' 0 dy i) 
+            (pic' 0) 
             [- c+110, - 60, - 140, - 200, - 260]
             [10, 14, 13, 19, 17]
             ++ [pic' 170 (- 65) 23]
@@ -109,18 +109,14 @@ time _ _ _ = [Blank]
 
 -- draw winner
 drawPic :: Win -> [Picture] -> [Picture]
-drawPic x p = case x of
-              None ->         zipWith(\dy i -> translate offsetX (offsetY + dy) $ p !! i)
-                                      [1,330,380] 
-                                      [5,4,0]
-                                
-              _     ->        zipWith(\dy i -> translate offsetX (offsetY + dy) $ p !! i)
+drawPic x p = zipWith(\dy i -> translate offsetX (offsetY + dy) $ p !! i)
                                      [1,380,330]
                                      [5,0,msg x]
               where
                   msg (Victory Black) = 2
                   msg (Victory White)   = 1
-                  msg Tie     = 3 
+                  msg Tie     = 3
+                  msg None = 4 
 
 -- get row of matrix as List 
 getRow :: Int -> Matrix Cell -> [Cell] 
@@ -221,42 +217,57 @@ t :: Types.Point -> Float -> Float -> Float -> Float -> Bool
 t (x,y) dx1 dx2 dy1 dy2 = (x >= (offsetX + dx1) && x <= (offsetX + dx2)) && (y >= dy1 && y <= dy2)
 
 handleMenu :: MouseEvent -> Types.Point -> Game -> IO Game
-handleMenu event (x,y) (Game a b c d e f (Main g) (x1,y1,z1,p) _) 
-  | t (x,y) (-120) 120 110 150
+handleMenu event (x,y) game
+  | menu game /= Opt && t (x,y) (-120) 120 110 150
     = case event of
       Move -> return (menu' 1)
       Click-> loadGame (menu' g)
-  | t (x,y) (-120) 120 50 90
+  | menu game /= Opt && t (x,y) (-120) 120 50 90
     = case event of
       Move -> return (menu' 2)
       Click-> saveGame (menu' g)
-  | t (x,y) (-120) 120 (-10) 30
+  | menu game /= Opt && t (x,y) (-120) 120 (-10) 30
     = case event of
       Move -> return (menu' 3)
-      Click-> return (Game a b c d e f Opt (x1,y1,z1,p) (x,y))
-  |t (x,y)  155 190 190 225
+      Click-> return game {menu = Opt, posMouse = (x, y)}
+  | menu game /= Opt && t (x,y)  155 190 190 225
     = case event of
-      Click->  return (Game a b c d e f Empty (x1,y1,z1,False) (x,y))
+      Click->  return game {menu = Empty, mode = newMode, posMouse = (x, y)}
+      -- (Game a b c d e f Empty (x1,y1,z1,False) (x,y))
       Move ->  return (menu' g )
-  | otherwise = return (menu' g )
+  | menu game /= Opt = return (menu' g )
   where 
-  menu' n = Game a b c d e f (Main n) (x1,y1,z1,p) (x,y)
+  menu' n = game {menu = Main n, posMouse = (x, y)}
+  (a,b,c,_) = mode game
+  newMode = (a, b, c, False)
+  (Main g) = menu game
                                                      
                                                      
-handleMenu Click (x,y) (Game a b c d e f Opt (x1,y1,z1,p) _)| t (x,y) 155 190 190 225
-                                                         = return (Game a b c d e f Empty (x1,y1,z1,False) (x,y))
-                                                            | t (x,y) (-180) (-60) 145 160
-                                                         = case x1 of
-                                                                Limit    -> return (Game a b c d e f Opt (Nolimit,y1,z1,p) (x,y))
-                                                                Nolimit -> return (Game a b c d e (20,20) Opt (Limit,y1,z1,p) (x,y))
-                                                            | t (x,y) (-180) (-20) 65 85
-                                                         = case y1 of
-                                                                Hard -> return (Game a b c d e f Opt (x1,Easy,z1,p) (x,y))
-                                                                Easy -> return (Game a b c d e f Opt (x1, Hard,z1,p) (x,y))                                                             
-                                                            | t (x,y) (-180) (-80) (-15) 0
-                                                         = case z1 of 
-                                                                HumComp -> return (Game a b c d e f Opt (x1,y1,HumHum,p) (x,y))
-                                                                HumHum  -> return (Game a b c d e f Opt (x1,y1,HumComp,p) (x,y))
-                                                            | t (x,y) (-180) (-130) (-85) (-35)
-                                                              = return (Game a b c d e f (Main 0) (x1,y1,z1,p) (x,y))
-                                                            | otherwise = return (Game a b c d e f Opt (x1,y1,z1,p) (x,y))                                                             
+handleMenu Click (x,y) game
+  | menu game == Opt && t (x,y) 155 190 190 225
+  = return game {menu = Empty, mode = unpause, posMouse=(x,y)}
+  | menu game == Opt && t (x,y) (-180) (-60) 145 160
+  = case a of
+        Limit    -> return game {menu = Opt, mode = limited False, posMouse = (x, y)}
+        Nolimit -> return game {menu = Opt, mode = limited True, timer = (60, 60), posMouse = (x,y)}
+  | menu game == Opt && t (x,y) (-180) (-20) 65 85
+  = case b of
+        Hard -> return game {menu = Opt, mode = hard True, posMouse = (x, y)}
+        Easy -> return game {menu = Opt, mode = hard False, posMouse = (x, y)}                                                             
+  | menu game == Opt && t (x,y) (-180) (-80) (-15) 0
+  = case c of 
+        HumComp -> return game {menu = Opt, mode = vsHum True, posMouse = (x, y)}
+        HumHum  -> return game {menu = Opt, mode = vsHum False, posMouse = (x, y)}
+  | menu game == Opt && t (x,y) (-180) (-130) (-85) (-35)
+    = return game {menu = Main 0, posMouse = (x, y)}
+  | otherwise = return game {posMouse = (x,y)}
+  where
+    (a,b,c,p) = mode game
+    unpause = (a, b, c, False)   
+    limited False = (Nolimit, b,c, p)
+    limited True = (Limit, b, c, p)
+    hard False = (a, Easy, c, p)                                                          
+    hard True = (a, Hard, c, p)
+
+    vsHum True = (a, b, HumHum, p)
+    vsHum False = (a, b, HumComp, p)

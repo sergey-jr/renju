@@ -1,7 +1,6 @@
 module Files where
 
 import Types
-import System.IO.Unsafe
 import Control.Exception
 import Data.Matrix
 import Data.List
@@ -25,7 +24,6 @@ loadTimer :: IO (Player,PointI)
 loadTimer = do
     content <- readFile "save/save_time.txt"
     let (player', timers) = recPlayer content
-    _ <- print player' >> print timers >> print content
     let (x, y) = bimap read read timers
     return (player', (x, y))
 
@@ -40,7 +38,7 @@ show' (Just Black) = "1"
 show' (Just White) = "2"
 
 showRow :: [Cell] -> [Char]
-showRow row = intercalate " " (map show' row)
+showRow row = unwords (map show' row)
 
 showRows :: [[Cell ]] -> [[Char ]]
 showRows = map showRow

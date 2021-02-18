@@ -64,6 +64,6 @@ gameMain
         time_2,
         time_text,cancel, 
         easy,h_h,h_c] 
-        Nothing (20,20) 
+        Nothing (60,60) 
         Empty 
         (Nolimit,Easy,HumHum,False) (0,0))
