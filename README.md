@@ -1,13 +1,14 @@
 # rejnzu
 
-This project is an haskel-implimentation of [Renju game](https://en.wikipedia.org/wiki/Renju)
+This project is a game of Haskell-Implementation of [Renju](https://en.wikipedia.org/wiki/Renju)
 
-Functions that realized:
-- save/load game
-- limit game
+Functions that have realized:
+- Saving / Load of Game
+- Limit time for the game
 - play vs Human (on one PC)
+
 Functions that might be, but not developed:
-- play vs Human (Local/by Internet)
+- play vs Human (Local/Internet)
 - play vs PC
 - prohibited turns (so now its more [gomoku-like](https://en.wikipedia.org/wiki/Gomoku))
-Other thing for intalation (build) project see [guide](Guide.md)
+For other things for the installation (build) project see [Guide](Guide.md)
