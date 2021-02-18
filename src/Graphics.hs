@@ -12,7 +12,7 @@ import Data.Matrix
              
 -- running game
 go :: Game -> IO ()
-go world = playIO (InWindow "Game Rejnzu" (800,800) (0,0)) 
+go world = playIO (InWindow "Renju game" (800,800) (0,0)) 
                white 
                1
                world 

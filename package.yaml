@@ -1,9 +1,9 @@
-name:                my-project
+name:                renju
 version:             1.0
-github:              "iu-haskell-spring-2021/project-template"
+github:              "sergey-jr/renju"
 license:             BSD3
-author:              "Nikolai Kudasov"
-maintainer:          "n.kudasov@innopolis.ru"
+author:              "Sergey Bakaleynik"
+maintainer:          "s.jr.bakaleynyk@gmail.com"
 copyright:           "2021 Innopolis University"
 
 extra-source-files:
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/iu-haskell-spring-2021/project-template#readme>
+description:         Please see the README on GitHub at <https://github.com/sergey-jr/renju#readme>
 
 custom-setup:
   dependencies:
@@ -39,7 +39,7 @@ library:
   source-dirs: src
 
 executables:
-  my-project-exe:
+  renju:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -47,7 +47,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - my-project
+    - renju
 
 tests:
   spec:

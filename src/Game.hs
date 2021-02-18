@@ -10,7 +10,7 @@ import Logic
 gameMain :: IO ()
 gameMain    
  = do
-   rejnzu     <- loadBMP "images/rejnzu.bmp"  --0
+   renju     <- loadBMP "images/renju.bmp"  --0
    whiteWin    <- loadBMP "images/white_win.bmp" --1
    blackWin  <- loadBMP "images/black_win.bmp"   --2
    tie        <- loadBMP "images/tie.bmp"         --3
@@ -40,7 +40,7 @@ gameMain
    
    let game = Game (matrixFiling sizeField) 
         Black None 
-        [rejnzu,
+        [renju,
         whiteWin,
         blackWin,
         tie,
