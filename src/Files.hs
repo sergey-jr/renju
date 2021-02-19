@@ -38,7 +38,7 @@ show' (Just Black) = "1"
 show' (Just White) = "2"
 
 showRow :: [Cell] -> [Char]
-showRow row = unwords (map show' row)
+showRow = unwords . map show'
 
 showRows :: [[Cell ]] -> [[Char ]]
 showRows = map showRow

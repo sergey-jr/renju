@@ -7,63 +7,32 @@ import Graphics.Gloss
 import Logic
 
 
+loadImages :: IO [Picture]
+loadImages = 
+     do 
+          let files = ["images/renju.bmp", "images/white_win.bmp",
+               "images/black_win.bmp", "images/tie.bmp", "images/play_game.bmp",
+               "images/texture.bmp", "images/timer_black.bmp",
+               "images/timer_white.bmp", "images/bmp/back.bmp",
+               "images/bmp/button.bmp", "images/bmp/fon.bmp",
+               "images/bmp/hard.bmp", "images/bmp/hardness.bmp",
+               "images/bmp/load.bmp", "images/bmp/menu.bmp",
+               "images/bmp/mode.bmp", "images/bmp/ok.bmp",
+               "images/bmp/options.bmp", "images/bmp/options_1.bmp",
+               "images/bmp/save.bmp", "images/bmp/time.bmp",
+               "images/bmp/time_2.bmp", "images/bmp/time_text.bmp",
+               "images/bmp/cancel.bmp", "images/bmp/easy.bmp", "images/bmp/h.bmp",
+               "images/bmp/h_c.bmp"]
+          mapM loadBMP files
+
 gameMain :: IO ()
 gameMain    
- = do
-   renju     <- loadBMP "images/renju.bmp"  --0
-   whiteWin    <- loadBMP "images/white_win.bmp" --1
-   blackWin  <- loadBMP "images/black_win.bmp"   --2
-   tie        <- loadBMP "images/tie.bmp"         --3
-   play_game  <- loadBMP "images/play_game.bmp"   --4
-   texture    <- loadBMP "images/texture.bmp"     --5
-   timer_b    <- loadBMP "images/timer_black.bmp"           --6
-   timer_w    <- loadBMP "images/timer_white.bmp"           --7
-   back'       <- loadBMP "images/bmp/back.bmp"    --8
-   button     <- loadBMP "images/bmp/button.bmp"  --9
-   fon        <- loadBMP "images/bmp/fon.bmp"    --10
-   hard       <- loadBMP "images/bmp/hard.bmp"   --11
-   hardness   <- loadBMP "images/bmp/hardness.bmp"--12
-   load       <- loadBMP "images/bmp/load.bmp"   --13
-   menu'       <- loadBMP "images/bmp/menu.bmp"   --14
-   mode'       <- loadBMP "images/bmp/mode.bmp"   --15
-   ok         <- loadBMP "images/bmp/ok.bmp"     --16
-   options    <- loadBMP "images/bmp/options.bmp"--17
-   options_1  <- loadBMP "images/bmp/options_1.bmp"--18
-   save       <- loadBMP "images/bmp/save.bmp"     --19
-   time'       <- loadBMP "images/bmp/time.bmp"     --20
-   time_2     <- loadBMP "images/bmp/time_2.bmp"   --21
-   time_text  <- loadBMP "images/bmp/time_text.bmp"--22
-   cancel     <- loadBMP "images/bmp/cancel.bmp"        --23
-   easy       <- loadBMP "images/bmp/easy.bmp"     --24
-   h_h        <- loadBMP "images/bmp/h.bmp"        --25
-   h_c        <- loadBMP "images/bmp/h_c.bmp"      --26
-   
+ = do   
+   pics <- loadImages
+
    let game = Game (matrixFiling sizeField) 
         Black None 
-        [renju,
-        whiteWin,
-        blackWin,
-        tie,
-        play_game,
-        texture,
-        timer_b,
-        timer_w,
-        back',
-        button,
-        fon,
-        hard,
-        hardness,
-        load,
-        menu',
-        mode',
-        ok,
-        options,
-        options_1,
-        save,
-        time',
-        time_2,
-        time_text,cancel, 
-        easy,h_h,h_c] 
+        pics
         Nothing (60,60) 
         Empty 
         (Nolimit,Easy,HumHum,False) (0,0)          

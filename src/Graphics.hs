@@ -18,17 +18,21 @@ go world = playIO (InWindow "Renju game" (800,800) (0,0))
                world 
                convert 
                Graphics.handle
-               update
+               updateIO
 
--- update timer (if exist)
-update ::Float -> Game -> IO Game
-update _ game | p = return game
-              | (x == 0) || (y == 0) = return game
-              | limit == Nolimit = return game -- game without limit does not need changes
-              | x == 1 && limit == Limit = return game { win = Victory White} -- time is up for Black
-              | y == 1 && limit == Limit = return game { win = Victory Black } -- time is up for White
-              | limit == Limit = return game {timer = f (player game)}
-              | otherwise = return game
+
+updateIO :: Float -> Game -> IO Game 
+updateIO dt game = return (update dt game)
+
+-- | update timer (if exist)
+update :: Float -> Game -> Game
+update _ game | p = game
+              | (x == 0) || (y == 0) = game
+              | limit == Nolimit = game -- game without limit does not need changes
+              | x == 1 && limit == Limit =  game { win = Victory White} -- time is up for Black
+              | y == 1 && limit == Limit =  game { win = Victory Black } -- time is up for White
+              | limit == Limit =  game {timer = f (player game)}
+              | otherwise =  game
                 where
                   (x, y) = timer game
                   (limit,_,_,p) = mode game
@@ -42,8 +46,9 @@ convert (Game m _ game p _ t' menu' (ti,ha,mo,pa) pos) = return
                            drawPic game p ++ 
                            time ti t' p    ++ 
                            mainDrawField m ++
-                           drawMenu p menu' (ti,ha,mo,pa) )
+                           drawMenu p menu' (ti,ha,mo,pa) 
                           --  ++ [axisGrid 800 800 pos]
+                           )
 
 
 
@@ -57,7 +62,7 @@ drawMenu p (Main n) _ = zipWith
                         ++ tail (drawMain p)
                       where
                       c = fromIntegral sizeField / 2 * sizeCell - 140 - 60 * fromIntegral(n - 1)
-drawMenu pic' Opt (t',h,m,_) = let                                                        -- options menu, draw choosen option
+drawMenu pic' Opt (t',h,m,_) = let   -- options menu, draw choosen option
                                 one = case t' of
                                             Limit     -> c 35 (-120)
                                             Nolimit  -> c 130 (-120)
@@ -76,7 +81,7 @@ drawMenu _ _ _ = [Blank]
 drawMain :: [Picture] -> [Picture]
 drawMain p =  zipWith
             (pic' 0) 
-            [- c+110, - 60, - 140, - 200, - 260]
+            [110-c, - 60, - 140, - 200, - 260]
             [10, 14, 13, 19, 17]
             ++ [pic' 170 (- 65) 23]
               where 
@@ -88,14 +93,15 @@ drawOpt   p =
                zipWith (`translate` 0)
                                 [0, 170,  0, -120,  35, 130, -100 ,35, 130, -110,  35, 130,-150]
                        (zipWith (\dy i -> translate offsetX (offsetY + fromIntegral sizeField / 2 * sizeCell + dy) $ p !! i)
-                                [-c+110, -65, -60, -120, -120, -120, -200, -200, -200, -280, -280, -280, -330]
+                                [110-c, -65, -60, -120, -120, -120, -200, -200, -200, -280, -280, -280, -330]
                                 [10, 23, 18,  22,  20,  21,  12,  11,  24,  15,  25,  26,   8])
                where
                c = fromIntegral sizeField / 2 * sizeCell
 
 -- draw timer
 time :: Time -> PointI -> [Picture] -> [Picture]
-time Limit (x,y) p = zipWith (\ z dx -> translate (offsetX + dx) (offsetY + fromIntegral sizeField / 2 * sizeCell) $ Scale 0.3 0.3 $ Text $ show z)
+time Limit (x,y) p = zipWith 
+  (\ z dx -> translate (offsetX + dx) (offsetY + fromIntegral sizeField / 2 * sizeCell) $ color' z $ Scale 0.3 0.3 $ Text $ show z)
              [x,y] [c2,c1]
              ++
              zipWith (\ dx i -> translate (offsetX + dx) (offsetY + fromIntegral sizeField / 2 * sizeCell + 50) $ p !! i)
@@ -105,6 +111,8 @@ time Limit (x,y) p = zipWith (\ z dx -> translate (offsetX + dx) (offsetY + from
              c2         = - c1 - 50
              c3         = c1 + 20
              c4         = c2 + 30
+             color' z | z< 10  = color red
+                      | otherwise  = color black
 time _ _ _ = [Blank]
 
 -- draw winner
@@ -233,7 +241,6 @@ handleMenu event (x,y) game
   | menu game /= Opt && t (x,y)  155 190 190 225
     = case event of
       Click->  return game {menu = Empty, mode = newMode, posMouse = (x, y)}
-      -- (Game a b c d e f Empty (x1,y1,z1,False) (x,y))
       Move ->  return (menu' g )
   | menu game /= Opt = return (menu' g )
   where 
@@ -252,8 +259,8 @@ handleMenu Click (x,y) game
         Nolimit -> return game {menu = Opt, mode = limited True, timer = (60, 60), posMouse = (x,y)}
   | menu game == Opt && t (x,y) (-180) (-20) 65 85
   = case b of
-        Hard -> return game {menu = Opt, mode = hard True, posMouse = (x, y)}
-        Easy -> return game {menu = Opt, mode = hard False, posMouse = (x, y)}                                                             
+        Hard -> return game {menu = Opt, mode = hard False, posMouse = (x, y)}
+        Easy -> return game {menu = Opt, mode = hard True, posMouse = (x, y)}                                                             
   | menu game == Opt && t (x,y) (-180) (-80) (-15) 0
   = case c of 
         HumComp -> return game {menu = Opt, mode = vsHum True, posMouse = (x, y)}

@@ -27,6 +27,13 @@ type Board = Matrix Cell
 type PointI = (Int,Int)
 type Point = (Float,Float)
 
+data Picture' = Picture' 
+  {picture :: Picture, 
+  area :: Maybe (Types.Point, Types.Point), 
+  pos :: Maybe Types.Point, 
+  -- name :: String, 
+  id :: Int }
+
 data Game = Game
           { field:: Board                  -- game board
           , player:: Player                 -- which turn
@@ -34,7 +41,7 @@ data Game = Game
           , pic  :: [Picture]              -- loaded pictures
           , back :: Maybe Game             -- cancel turn (save previous state)
           , timer:: PointI                 -- timer for both players 
-          , menu :: Menu                   -- munu objects
+          , menu :: Menu                   -- menu objects
           , mode :: (Time,Hard,Mode,Pause) -- game mode (Time limit, Dificulty, PC/Human, Pause)
           , posMouse :: Types.Point
           }
