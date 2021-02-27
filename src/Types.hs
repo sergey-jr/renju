@@ -6,48 +6,95 @@ import Data.Matrix
 
 data Player = Black | White
                      deriving (Show, Eq)
-data Victory a = Victory a | Tie | None deriving (Show, Eq)
 
 data Diagonal = L | R
 
-data Hard = Easy | Hard  deriving (Show, Eq)
-data Mode = HumComp | HumHum  deriving (Show, Eq)
-data Time = Limit | Nolimit  deriving (Show, Eq)
-type Pause = Bool
+newtype MainMenu = MainMenu [Button]
+
+newtype OptionsMenu = OptionsMenu [Button]
+
+data ButtonData a = ButtonData
+  { buttonDataId  :: ButtonId
+  , buttonRegular :: a
+  , buttonActive  :: a
+  }
+
+data Button = Button
+  { buttonId          :: ButtonId
+  , buttonImage       :: Picture
+  , buttonImageActive :: Picture
+  , buttonHitbox      :: Maybe Hitbox
+  , buttonPosition    :: Maybe Point 
+  , buttonAction      :: App -> IO App
+  }
+
+newtype ButtonId = ButtonId String
+  deriving (Eq)
+
+data App = App
+  { appGame :: Game
+  , appPauseGame :: GamePause
+  , appGameOptions :: GameOptions
+  , appMenuStatus :: Maybe MenuStatus
+  , images :: [ButtonData Picture]
+  , posMouse :: Point
+  }
+
+data MenuStatus = MenuOpenMain (Maybe ButtonId) | MenuOpenOptions
+  deriving (Eq)
+
+data GamePause
+  = GamePaused
+  | GameContinues
+  deriving (Eq)
+
+data Opponent
+  = Human
+  | Computer ComputerDifficulty
+
+data ComputerDifficulty = Hard | Easy
+
+data GameOptions = GameOptions
+  { optionOpponent :: Opponent
+  , optionTimeLimit :: TimeLimit
+  }
+
+data Game = Game
+  { gameBoard         :: Board
+  , gameCurrentPlayer :: Player
+  , gameStatus        :: Maybe GameStatus
+  , gameTimer         :: Timer
+  , gameHistory       :: Maybe Game
+  }
+
+data Timer = Timer
+  { timerBlack  :: Float
+  , timerWhite  :: Float
+  }
+
+data GameStatus
+  = Victory Player
+  | Tie
+  deriving (Eq)
 
 data MouseEvent = Click | Move
-
-data Menu = Main {anum :: Int} | Opt | Empty deriving (Show, Eq)
-
-type Win = Victory Player
                
 type Cell = Maybe Player 
 
 type Board = Matrix Cell
-type PointI = (Int,Int)
-type Point = (Float,Float)
 
-data Picture' = Picture' 
-  {picture :: Picture, 
-  area :: Maybe (Types.Point, Types.Point), 
-  pos :: Maybe Types.Point, 
-  -- name :: String, 
-  id :: Int }
+type PointI = (Int, Int)
 
-data Game = Game
-          { field:: Board                  -- game board
-          , player:: Player                 -- which turn
-          , win  :: Win                    -- end of game flag
-          , pic  :: [Picture]              -- loaded pictures
-          , back :: Maybe Game             -- cancel turn (save previous state)
-          , timer:: PointI                 -- timer for both players 
-          , menu :: Menu                   -- menu objects
-          , mode :: (Time,Hard,Mode,Pause) -- game mode (Time limit, Dificulty, PC/Human, Pause)
-          , posMouse :: Types.Point
-          }
+data TimeLimit = Limit | Nolimit
+  deriving (Eq)
+
+type Hitbox = (Point, Point)
 
 sizeCell :: Float
 sizeCell = 40.0
+
+magicY :: Float
+magicY = offsetY + fromIntegral sizeField / 2 * sizeCell
 
 -- size of field (size of matrix + 1)
 sizeField :: Int

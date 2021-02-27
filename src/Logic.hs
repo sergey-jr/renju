@@ -4,13 +4,14 @@ import Types
 import Data.List
 import Data.Maybe
 import Data.Matrix
+import Graphics.Gloss
 
 -- cancel of turn
 getback :: Game -> Game
-getback game | isJust (back game) = prevGame
+getback game | isJust (gameHistory game) = prevGame
              | otherwise = game
              where
-                 Just prevGame = back game
+                 Just prevGame = gameHistory game
 
 
 -- game handler
@@ -18,22 +19,18 @@ checkGame :: PointI -> Game -> Game
 checkGame (0,_) board = board
 checkGame (_,0) board = board
 checkGame coord game 
-    | canPutAt coord curBoard =  Game
-                            newBoard
-                            (inversePlayer curPlayer)
-                            winner'
-                            (pic game)
-                            (Just game)
-                            (timer game)
-                            (menu game)
-                            (mode game)
-                            (posMouse game)
+    | canPutAt coord curBoard =  Game 
+                                {gameBoard=newBoard, 
+                                gameCurrentPlayer=inversePlayer curPlayer, 
+                                gameStatus=newStatus, 
+                                gameTimer=gameTimer game, 
+                                gameHistory=Just game}
     | otherwise             =  game
     where
-        curBoard = field game
-        curPlayer = player game
+        curBoard = gameBoard game
+        curPlayer = gameCurrentPlayer game
         newBoard = putIn coord curPlayer curBoard
-        winner' = gameRules newBoard
+        newStatus = gameRules newBoard
 
 -- get column by coordinate on screen
 mainNumberCol :: Point -> Int
@@ -96,15 +93,15 @@ winFunc _ _ = False
 -- Detrmine if game is end
 -- None - nobody, Tie - board is full, otherwise (Victory Black |Victory White)
 
-gameRules :: Board ->Win
+gameRules :: Board -> Maybe GameStatus
 gameRules board
             | isJust winner'
-            = Victory player'
-            | fullBoard board = Tie
-            | otherwise = None
+            = Just (Victory player)
+            | fullBoard board = Just Tie
+            | otherwise = Nothing
             where
                 winner' = winner board
-                Just player' = winner'
+                Just player = winner'
 
 -- Is board full
 fullRow :: [Cell] -> Bool

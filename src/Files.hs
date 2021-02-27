@@ -13,19 +13,25 @@ processError f e = do
     print ("Warning: Couldn't open " ++ f ++ ": " ++ err)
 
 -- load game from file
-loadGame :: Game -> IO Game
-loadGame game = do
-         field' <- loadBoard
-         (player', timer') <- loadTimer
-         return game {field = field', player= player', timer=timer', posMouse=(0,0)}
+loadState :: App -> IO App
+loadState app = do
+         board <- loadBoard
+         (player, timer) <- loadTimer
+         let game = Game {gameBoard=board, 
+                         gameCurrentPlayer=player, 
+                         gameStatus=Nothing, 
+                         gameTimer=timer,
+                         gameHistory=Nothing}
+         return app {appGame=game}
          
 
-loadTimer :: IO (Player,PointI)
+loadTimer :: IO (Player,Timer)
 loadTimer = do
     content <- readFile "save/save_time.txt"
     let (player', timers) = recPlayer content
     let (x, y) = bimap read read timers
-    return (player', (x, y))
+    let timer = Timer {timerBlack=x, timerWhite=y}
+    return (player', timer)
 
 loadBoard :: IO Board
 loadBoard = do
@@ -52,28 +58,29 @@ saveBoard board = do
     return board
 
 -- save timer
-saveTimer :: PointI -> Player -> IO PointI
-saveTimer (x, y) player'
+saveTimer :: Timer -> Player -> IO Timer
+saveTimer timer player'
     | player' == White = 
         do 
             -- print "started save timer"
-            writeFile "./save/save_time.txt" ("W " ++ show x ++ " " ++ show y ++ "\n")
+            writeFile "./save/save_time.txt" ("W " ++ show (timerBlack timer) ++ " " ++ show (timerWhite timer) ++ "\n")
             -- print "end save timer"
-            return (x, y)
+            return timer
     | otherwise = 
         do 
             -- print "started save timer"
-            writeFile "./save/save_time.txt" ("B " ++ show x ++ " " ++ show y ++ "\n")
+            writeFile "./save/save_time.txt" ("B " ++ show (timerBlack timer) ++ " " ++ show (timerWhite timer) ++ "\n")
             -- print "end save timer"
-            return (x, y)
+            return timer
 
 -- save game
-saveGame:: Game -> IO Game
-saveGame game = 
+saveState :: App  -> IO App
+saveState app = 
     do
-        _ <- saveBoard (field game)
-        _ <- saveTimer (timer game) (player game)
-        return game
+        let game = appGame app
+        _ <- saveBoard (gameBoard game)
+        _ <- saveTimer (gameTimer game) (gameCurrentPlayer game)
+        return app
 
 -- load matrix from strings
 recMatrix  :: Int -> Int -> String -> Board -> Board
@@ -98,4 +105,4 @@ recTime  (x:xs) buf (a,b)   | x == '\n' = (a,reverse buf)
                             | otherwise = recTime  xs (x:buf) (a,b)         
 
 matrixFiling :: Int -> Board 
-matrixFiling n = matrix n n $ \ _ -> Nothing
+matrixFiling n = matrix n n $ const Nothing
