@@ -7,6 +7,13 @@ Functions that have realized:
 - Saving / Load of Game
 - Limit time for the game
 - play vs Human (on one PC)
+- go forward/backwards
+
+Controls:
+- mouse for place stones
+- Home for open menu
+- Left arrow to go back (cancel turn)
+- Right arrow to go forward
 
 Functions that might be, but not developed:
 - play vs Human (Local/Internet)

@@ -4,7 +4,7 @@ import Graphics.Gloss
 
 import Graphics
 import Types
-import Files
+import Utils
 import Logic
 
 loadButton :: ButtonData FilePath -> IO (ButtonData Picture)
@@ -15,8 +15,8 @@ loadButton btnData =
           return ButtonData 
                {
                     buttonDataId=buttonDataId btnData, 
-                    buttonRegular=active, 
-                    buttonActive=regular
+                    buttonRegular=regular, 
+                    buttonActive=active
                }
 
 loadButtons :: [ButtonData FilePath] -> IO [ButtonData Picture]
@@ -178,7 +178,8 @@ buttons = [
           {
                buttonDataId=ButtonId "Save File", 
                buttonRegular="images/bmp/save.bmp", 
-               buttonActive="images/bmp/save_active.bmp"}
+               buttonActive="images/bmp/save_active.bmp"
+          }
      ]
 
 
@@ -190,11 +191,12 @@ gameMain
    let game' = 
         Game 
         {
-          gameBoard=matrixFiling sizeField, 
+          gameBoard=matrixFilling sizeField, 
           gameCurrentPlayer=Black, 
-          gameStatus=Nothing , 
+          gameEnd=Nothing , 
           gameTimer=Timer {timerBlack=60, timerWhite=60}, 
-          gameHistory=Nothing
+          gameHistory=Nothing,
+          gameFuture=Nothing
         }
    let game = (checkGame (8,8) game') {gameHistory = Nothing }
    let options = GameOptions {optionOpponent=Human, optionTimeLimit=Nolimit}

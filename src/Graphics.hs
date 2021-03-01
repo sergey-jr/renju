@@ -11,7 +11,7 @@ import GameGraphics
 import Utils
 
              
--- running game
+-- | running game
 go :: App -> IO ()
 go app = playIO (InWindow "Renju game" (800,800) (0,0)) 
                white 
@@ -35,7 +35,7 @@ update dt app | appPauseGame app == GamePaused = app
               | otherwise =  app
                 where
                   limit = optionTimeLimit (appGameOptions app)
-                  victory player = (appGame app){gameStatus = Just (Victory player)}
+                  victory player = (appGame app){gameEnd = Just (Victory player)}
                   curTimer = gameTimer (appGame app)
                   delta = fromIntegral (floor dt `mod` 120)
                   newTimer = case gameCurrentPlayer (appGame app) of
@@ -43,6 +43,7 @@ update dt app | appPauseGame app == GamePaused = app
                                   Black -> curTimer {timerBlack = timerBlack curTimer - delta}
                   newGame = (appGame app){gameTimer =newTimer}
 
+-- |  draw app state with/without menu
 drawApp :: App -> IO Picture
 drawApp app 
   | isNothing (appMenuStatus app) = 
@@ -63,7 +64,7 @@ drawApp app
       --  ++ [axisGrid 800 800 (posMouse app)]
     )    
 
--- draw menu
+-- | draw menu
 drawMenu :: App  -> [Picture]
 drawMenu app | appMenuStatus app == Just MenuOpenOptions = [renderOptionsMenu options optionsMenu']
              | otherwise = [renderMainMenu highlighted mainMenu']
@@ -77,7 +78,7 @@ drawMenu app | appMenuStatus app == Just MenuOpenOptions = [renderOptionsMenu op
                               (Just MenuOpenOptions) -> Nothing 
                mainMenu' = mainMenu (images app)
 
--- handle Game events
+-- | handle Game events
 handle :: Event -> App -> IO App
 handle (EventKey (SpecialKey KeyHome) Down _ _) app 
   | isNothing (appMenuStatus app) = return app {appMenuStatus = Just (MenuOpenMain Nothing) , appPauseGame = GamePaused}
@@ -93,10 +94,13 @@ handle (EventKey (MouseButton LeftButton) Down _ (x,y)) app
 
 handle _ app | appPauseGame app == GamePaused = return app
 
-handle (EventKey (SpecialKey KeySpace) Down _ _) app =  return app {appGame = newGame}
+handle (EventKey (SpecialKey KeyLeft) Down _ _) app =  return app {appGame = newGame}
   where
-    newGame = getback (appGame app)
-handle _ app | isJust (gameStatus game)  = return app
+    newGame = goBackward (appGame app)
+handle (EventKey (SpecialKey KeyRight) Down _ _) app =  return app {appGame = newGame}
+  where
+    newGame = goForeward (appGame app)
+handle _ app | isJust (gameEnd game)  = return app
   where
     game = appGame app
 handle (EventKey (MouseButton LeftButton) Down _ (x,y)) app 

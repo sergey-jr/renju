@@ -7,6 +7,7 @@ import Data.List
 import Data.Maybe
 import Utils
 
+-- | declare main menu and its buttons
 mainMenu :: [ButtonData Picture] -> MainMenu
 mainMenu buttonPictures = MainMenu [ background, buttonLoadFile, buttonSaveFile, buttonOptions, closeButton, mainMenuText]
   where
@@ -41,6 +42,7 @@ mainMenu buttonPictures = MainMenu [ background, buttonLoadFile, buttonSaveFile,
                   closeClick
                   buttonPictures                                   
 
+-- | declare options menu and its buttons
 optionsMenu :: [ButtonData Picture] -> OptionsMenu
 optionsMenu buttonPictures = OptionsMenu 
   [background, optionsMenuText, timeLimitButton, difficultyButton, 
@@ -120,50 +122,59 @@ optionsMenu buttonPictures = OptionsMenu
                  backClick
                  buttonPictures
 
+-- | render for main menu with highlighted button (if exists)
 renderMainMenu :: Maybe ButtonId -> MainMenu -> Picture
 renderMainMenu highlighted (MainMenu buttons)
   = pictures (map drawButton buttons' ++ highlightedPic)
   where
     buttons' = case highlighted of
                 Nothing -> buttons
-                Just btnId -> filter (\btn -> buttonId btn /= btnId) buttons
+                Just btnId -> filter (\btn -> buttonDataId (buttonData btn) /= btnId) buttons
     highlightedBtn = case highlighted of
                       Nothing -> []
-                      Just btnId -> filter (\btn -> buttonId btn == btnId) buttons
+                      Just btnId -> filter (\btn -> buttonDataId (buttonData btn) == btnId) buttons
     highlightedPic = map drawActiveButton highlightedBtn
 
+-- | put choosen picture (V) near option
 putChoosenAt :: Point -> Point -> Button -> Button -> Picture
-putChoosenAt (x, y) (x1, y1) choosen button = translate x1 y1 (buttonImageActive button)
-                                              <> translate (x + offsetX) (y + magicY) (buttonImage choosen)
+putChoosenAt (x, y) (x1, y1) choosen button = translate x1 y1 (buttonActive (buttonData button))
+                                              <> translate (x + offsetX) (y + magicY) (buttonRegular (buttonData choosen))
 
+-- | render for options menu
 renderOptionsMenu :: GameOptions -> OptionsMenu -> Picture
 renderOptionsMenu gameOptions (OptionsMenu buttons) = pictures (map renderButton buttons)
   where
-    Just choosen = find (\btn -> buttonId btn == ButtonId "Choosen") buttons
+    Just choosen = find (\btn -> buttonDataId (buttonData btn) == ButtonId "Choosen") buttons
     renderButton button 
-      | buttonId button == ButtonId "Unlimited" = case optionTimeLimit gameOptions of
-                                                    Limit -> translate posX posY (buttonImageActive button)
-                                                    Nolimit -> putChoosenAt (130, -120) (posX, posY) choosen button
-      | buttonId button == ButtonId "Limited" = case optionTimeLimit gameOptions of
-                                                    Nolimit -> translate posX posY (buttonImageActive button)
-                                                    Limit -> putChoosenAt (35, -120) (posX, posY) choosen button
-      | buttonId button == ButtonId "Easy" = case optionOpponent gameOptions of
-                                                Human -> putChoosenAt (130, -200) (posX, posY) choosen button
-                                                Computer difficulty -> case difficulty of
-                                                                        Hard -> translate posX posY (buttonImageActive button)
-                                                                        Easy -> putChoosenAt (130, -200) (posX, posY) choosen button
-      | buttonId button  == ButtonId "Hard" = case optionOpponent gameOptions of
-                                                Human -> translate posX posY (buttonImageActive button)
-                                                Computer difficulty -> case difficulty of
-                                                                        Hard -> putChoosenAt (35, -200) (posX, posY) choosen button
-                                                                        Easy -> translate posX posY (buttonImageActive button)
-      | buttonId button == ButtonId "Opponent PC" = case optionOpponent gameOptions of
-                                                     Human -> translate posX posY (buttonImageActive button)
-                                                     Computer _ -> putChoosenAt (130, -280) (posX, posY) choosen button
-      | buttonId button == ButtonId "Opponent Human" = case optionOpponent gameOptions of
-                                                     Human -> putChoosenAt (35, -280) (posX, posY) choosen button
-                                                     Computer _ -> translate posX posY (buttonImageActive button)
-      | buttonId button /= ButtonId "Choosen" = translate posX posY (buttonImageActive button)
+      | buttonDataId (buttonData button) == ButtonId "Unlimited" 
+        = case optionTimeLimit gameOptions of
+          Limit -> translate posX posY (buttonActive (buttonData button))
+          Nolimit -> putChoosenAt (130, -120) (posX, posY) choosen button
+      | buttonDataId (buttonData button) == ButtonId "Limited" 
+        = case optionTimeLimit gameOptions of
+          Nolimit -> translate posX posY (buttonActive (buttonData button))
+          Limit -> putChoosenAt (35, -120) (posX, posY) choosen button
+      | buttonDataId (buttonData button) == ButtonId "Easy" 
+        = case optionOpponent gameOptions of
+          Human -> putChoosenAt (130, -200) (posX, posY) choosen button
+          Computer difficulty -> case difficulty of
+                                  Hard -> translate posX posY (buttonActive (buttonData button))
+                                  Easy -> putChoosenAt (130, -200) (posX, posY) choosen button
+      | buttonDataId (buttonData button) == ButtonId "Hard" 
+        = case optionOpponent gameOptions of
+          Human -> translate posX posY (buttonActive (buttonData button))
+          Computer difficulty -> case difficulty of
+                                  Hard -> putChoosenAt (35, -200) (posX, posY) choosen button
+                                  Easy -> translate posX posY (buttonActive (buttonData button))
+      | buttonDataId (buttonData button) == ButtonId "Opponent PC" 
+        = case optionOpponent gameOptions of
+          Human -> translate posX posY (buttonActive (buttonData button))
+          Computer _ -> putChoosenAt (130, -280) (posX, posY) choosen button
+      | buttonDataId (buttonData button) == ButtonId "Opponent Human" 
+        = case optionOpponent gameOptions of
+        Human -> putChoosenAt (35, -280) (posX, posY) choosen button
+        Computer _ -> translate posX posY (buttonActive (buttonData button))
+      | buttonDataId (buttonData button) /= ButtonId "Choosen" = translate posX posY (buttonActive (buttonData button))
       | otherwise = blank 
       where
         Just (posX, posY) = buttonPosition button                                                                                                                           
@@ -207,19 +218,22 @@ opponentClick app = return app {appGameOptions = newOptions}
                     Computer _ -> Human
     newOptions = (appGameOptions app){optionOpponent = newOpponent}
 
-
+-- | check if mouse in hitbox for highlighting
 mousePointerInHitbox :: Point -> Maybe Hitbox -> Bool
-mousePointerInHitbox (x, y) (Just ((x1, x2), (y1, y2))) = (x >= (offsetX + x1) && x <= (offsetX + x2)) && (y >= y1 && y <= y2)
+mousePointerInHitbox (x, y) (Just ((x1, x2), (y1, y2))) 
+  = (x >= (offsetX + x1) && x <= (offsetX + x2)) && (y >= y1 && y <= y2)
 mousePointerInHitbox _ Nothing  = False
 
+-- | highlight button
 activateButton :: Point -> MainMenu -> Maybe ButtonId
 activateButton mousePos (MainMenu buttons) = btnId
   where
     button = find (mousePointerInHitbox mousePos . buttonHitbox) buttons
     btnId = case button of
               Nothing -> Nothing
-              Just btn -> Just (buttonId btn)
+              Just btn -> Just (buttonDataId (buttonData btn))
 
+-- | menu handler
 handleMenu :: MouseEvent -> Point -> App -> IO App
 handleMenu Move mousePos app 
   | isJust (appMenuStatus app) && appMenuStatus app /= Just MenuOpenOptions = 

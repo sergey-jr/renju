@@ -1,9 +1,15 @@
 module Utils where
 
 import Graphics.Gloss
-import Types
 import Data.List
+import Data.Matrix
+import Types
 
+-- | filling matrix
+matrixFilling :: Int -> Board 
+matrixFilling n = matrix n n $ const Nothing
+
+-- | load picture for button/image by its path
 loadButtonPictures :: ButtonData FilePath -> IO (ButtonData Picture)
 loadButtonPictures (ButtonData btnId regular active) = do
   regularPicture <- loadBMP regular
@@ -11,28 +17,27 @@ loadButtonPictures (ButtonData btnId regular active) = do
   return (ButtonData btnId regularPicture activePicture)
 
 drawButton :: Button -> Picture
-drawButton btn = translate posX posY (buttonImage btn)
+drawButton btn = translate posX posY (buttonRegular (buttonData btn))
   where
     Just (posX, posY) = buttonPosition btn
 
 drawActiveButton :: Button -> Picture
-drawActiveButton btn = translate posX posY (buttonImageActive btn)
+drawActiveButton btn = translate posX posY (buttonActive (buttonData btn))
   where
     Just (posX, posY) = buttonPosition btn
 
 mkButton :: ButtonId -> Maybe Hitbox -> Maybe Point -> (App -> IO App) -> [ButtonData Picture] -> Button
 mkButton btnId hitbox pos action imgs = 
   Button
-  {buttonId = btnId, 
-  buttonHitbox = hitbox,
-   buttonImage = buttonRegular image,
-   buttonImageActive = buttonActive image,
-   buttonPosition = pos,
-   buttonAction = action}
+  {
+    buttonData = image,
+    buttonHitbox = hitbox,
+    buttonPosition = pos,
+    buttonAction = action}
   where
     (Just image) = find (\btn -> buttonDataId btn == btnId) imgs
 
--- optional axis for debuging
+-- | optional axis for debuging
 axisGrid :: Int -> Int -> (Float, Float ) -> Picture
 axisGrid width height mousePos = yTicks <> xTicks <> coords <> verticalLine <> horizontalLine
   where
